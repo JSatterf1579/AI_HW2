@@ -1,0 +1,7 @@
+.idea/
+
+/src/edu/cwru/sepia/agent/minimax/*.class
+/out/
+
+*.iws
+*.iml
