@@ -21,10 +21,13 @@ import java.util.*;
  */
 public class GameState {
 
-    Double utility = null;
-    List<Unit.UnitView> footmen = null;
-    List<Unit.UnitView> archers = null;
-    List<ResourceNode.ResourceView> resources = null;
+    Double utility;
+    List<Unit.UnitView> footmen;
+    List<Unit.UnitView> archers;
+    List<ResourceNode.ResourceView> resources;
+    int xExtent;
+    int yExtent;
+    State.StateView oldState;
 
     /**
      * You will implement this constructor. It will
@@ -51,6 +54,9 @@ public class GameState {
         footmen =  state.getUnits(0);
         archers =  state.getUnits(1);
         resources = state.getAllResourceNodes();
+        xExtent = state.getXExtent();
+        yExtent = state.getYExtent();
+        oldState = state;
     }
 
     /**
@@ -92,11 +98,55 @@ public class GameState {
      * @return All possible actions and their associated resulting game state
      */
     public List<GameStateChild> getChildren(MinimaxAlphaBeta.MinimaxState turn) {
+        ArrayList<GameStateChild> children = new ArrayList<GameStateChild>();
         if (turn == MinimaxAlphaBeta.MinimaxState.MAX) {
-            for (Direction direction : Direction.values()) {
-                return null;
+            generateFootmenChildren(children);
+        } else {
+            generateArcherChildren(children);
+        }
+        return children;
+    }
+
+    private boolean isInMap(int x, int y) {
+        if (x >= 0 && x < xExtent){
+            if (y >= 0 && y < yExtent) {
+                return true;
             }
         }
-        return null;
+        return false;
+    }
+
+    private boolean notOnResourceNode(int x, int y) {
+        for (ResourceNode.ResourceView resource: resources) {
+            if (x == resource.getXPosition() && y == resource.getYPosition()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void generateFootmenChildren(List<GameStateChild> children){
+        Unit.UnitView footman1 = footmen.get(0);
+        Unit.UnitView footman2 = footmen.get(1);
+        for (Direction direction1: Direction.values()) {
+            for (Direction direction2: Direction.values()) {
+                int x1 = footman1.getXPosition() + direction1.xComponent();
+                int y1 = footman1.getYPosition() + direction1.yComponent();
+                int x2 = footman2.getXPosition() + direction2.xComponent();
+                int y2 = footman2.getYPosition() + direction2.yComponent();
+                if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode((x2, y2))) {
+                    Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                    Action action1 = Action.createPrimitiveMove(footman1.getID(), direction1);
+                    Action action2 = Action.createPrimitiveMove(footman2.getID(), direction2);
+                    actionSet.put(0, action1);
+                    actionSet.put(1, action2);
+                    State.StateView newState = createNewState();
+                }
+            }
+        }
+    }
+
+    private void generateArcherChildren(List<GameStateChild> children) {
+
     }
 }
