@@ -12,6 +12,10 @@ import java.util.Map;
 
 public class MinimaxAlphaBeta extends Agent {
 
+    public enum MinimaxState {
+        MIN, MAX
+    }
+
     private final int numPlys;
 
     public MinimaxAlphaBeta(int playernum, String[] args)
@@ -37,7 +41,8 @@ public class MinimaxAlphaBeta extends Agent {
         GameStateChild bestChild = alphaBetaSearch(new GameStateChild(newstate),
                 numPlys,
                 Double.NEGATIVE_INFINITY,
-                Double.POSITIVE_INFINITY);
+                Double.POSITIVE_INFINITY,
+                MinimaxState.MAX);
 
         return bestChild.action;
     }
@@ -72,8 +77,19 @@ public class MinimaxAlphaBeta extends Agent {
      * @param beta The current best value for the minimizing node from this node to the root
      * @return The best child of this node with updated values
      */
-    public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta)
+    public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta, MinimaxState maxOrMin)
     {
+        if(node.state.getChildren().size() == 0 || depth == 0) {
+            return node;
+        }
+
+        if(maxOrMin == MinimaxState.MAX) {
+            double v = alpha;
+            for(GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
+                
+            }
+        }
+
         return node;
     }
 
