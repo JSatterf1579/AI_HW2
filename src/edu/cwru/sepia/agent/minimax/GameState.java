@@ -4,6 +4,7 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
+import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 import edu.cwru.sepia.util.Direction;
@@ -19,6 +20,11 @@ import java.util.*;
  * but do not delete or change the signatures of the provided methods.
  */
 public class GameState {
+
+    Double utility = null;
+    List<Unit.UnitView> footmen = null;
+    List<Unit.UnitView> archers = null;
+    List<ResourceNode.ResourceView> resources = null;
 
     /**
      * You will implement this constructor. It will
@@ -42,6 +48,9 @@ public class GameState {
      * @param state Current state of the episode
      */
     public GameState(State.StateView state) {
+        footmen =  state.getUnits(0);
+        archers =  state.getUnits(1);
+        resources = state.getAllResourceNodes();
     }
 
     /**
@@ -82,7 +91,12 @@ public class GameState {
      *
      * @return All possible actions and their associated resulting game state
      */
-    public List<GameStateChild> getChildren() {
+    public List<GameStateChild> getChildren(MinimaxAlphaBeta.MinimaxState turn) {
+        if (turn == MinimaxAlphaBeta.MinimaxState.MAX) {
+            for (Direction direction : Direction.values()) {
+                return null;
+            }
+        }
         return null;
     }
 }
