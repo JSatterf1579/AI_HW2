@@ -21,6 +21,7 @@ import java.util.*;
  */
 public class GameState {
 
+
     Double utility = null;
     List<Unit.UnitView> footmen = null;
     List<Unit.UnitView> archers = null;
@@ -99,4 +100,6 @@ public class GameState {
         }
         return null;
     }
+
+
 }
