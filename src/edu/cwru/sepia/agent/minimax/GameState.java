@@ -22,12 +22,11 @@ import java.util.*;
 public class GameState {
 
     Double utility;
-    List<Unit.UnitView> footmen;
-    List<Unit.UnitView> archers;
-    List<ResourceNode.ResourceView> resources;
+    List<StateUnit> footmen = new ArrayList<StateUnit>();
+    List<StateUnit> archers = new ArrayList<StateUnit>();;
+    List<Position> resources = new ArrayList<Position>();
     int xExtent;
     int yExtent;
-    State.StateView oldState;
 
     /**
      * You will implement this constructor. It will
@@ -51,12 +50,20 @@ public class GameState {
      * @param state Current state of the episode
      */
     public GameState(State.StateView state) {
-        footmen =  state.getUnits(0);
-        archers =  state.getUnits(1);
-        resources = state.getAllResourceNodes();
+        List<Unit.UnitView> origFootmen = state.getUnits(0);
+        for (Unit.UnitView footman: origFootmen) {
+            footmen.add(new StateUnit(footman));
+        }
+        List<Unit.UnitView> origArchers = state.getUnits(1);
+        for (Unit.UnitView archer: origArchers) {
+            footmen.add(new StateUnit(archer));
+        }
+        List<ResourceNode.ResourceView> origNodes = state.getAllResourceNodes();
+        for (ResourceNode.ResourceView resource: origNodes) {
+            resources.add(new Position(resource));
+        }
         xExtent = state.getXExtent();
         yExtent = state.getYExtent();
-        oldState = state;
     }
 
     /**
@@ -117,8 +124,8 @@ public class GameState {
     }
 
     private boolean notOnResourceNode(int x, int y) {
-        for (ResourceNode.ResourceView resource: resources) {
-            if (x == resource.getXPosition() && y == resource.getYPosition()) {
+        for (Position resource: resources) {
+            if (x == resource.x && y == resource.y) {
                 return false;
             }
         }
@@ -126,8 +133,8 @@ public class GameState {
     }
 
     private void generateFootmenChildren(List<GameStateChild> children){
-        Unit.UnitView footman1 = footmen.get(0);
-        Unit.UnitView footman2 = footmen.get(1);
+        StateUnit footman1 = footmen.get(0);
+        StateUnit footman2 = footmen.get(1);
         for (Direction direction1: Direction.values()) {
             for (Direction direction2: Direction.values()) {
                 int x1 = footman1.getXPosition() + direction1.xComponent();
@@ -136,11 +143,11 @@ public class GameState {
                 int y2 = footman2.getYPosition() + direction2.yComponent();
                 if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode((x2, y2))) {
                     Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
-                    Action action1 = Action.createPrimitiveMove(footman1.getID(), direction1);
-                    Action action2 = Action.createPrimitiveMove(footman2.getID(), direction2);
+                    Action action1 = Action.createPrimitiveMove(footman1.ID, direction1);
+                    Action action2 = Action.createPrimitiveMove(footman2.ID, direction2);
                     actionSet.put(0, action1);
                     actionSet.put(1, action2);
-                    State.StateView newState = createNewState();
+                    State.StateView newState;
                 }
             }
         }
@@ -150,5 +157,47 @@ public class GameState {
 
     }
 
+    private void copyState(GameState) {
 
+    }
+
+    private class Position {
+        public int x;
+        public int y;
+
+        public Position(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public Position(ResourceNode.ResourceView view) {
+            this.x = view.getXPosition();
+            this.y = view.getYPosition();
+        }
+
+    }
+
+    private class StateUnit {
+        public int ID;
+        public Position position;
+        public int health;
+        public int range;
+        public int damage;
+
+        public StateUnit(edu.cwru.sepia.environment.model.state.Unit.UnitView realUnit) {
+            this.ID = realUnit.getID();
+            this.position = new Position(realUnit.getXPosition(), realUnit.getYPosition());
+            this.health = realUnit.getTemplateView().getBaseHealth();
+            this.range = realUnit.getTemplateView().getRange();
+            this.damage = realUnit.getTemplateView().getBasicAttack();
+        }
+
+        public int getXPosition() {
+            return position.x;
+        }
+
+        public int getYPosition() {
+            return position.y;
+        }
+    }
 }
