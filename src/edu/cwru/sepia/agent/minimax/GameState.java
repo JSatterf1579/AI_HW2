@@ -90,8 +90,24 @@ public class GameState {
     public double getUtility() {
         double utility = 0.0;
         for(StateUnit unit: footmen) {
-            
+            if(unit.attacking) {
+                utility += 500;
+            }
+            //Distance
+            //health
+            utility+=unit.health;
         }
+
+        for(StateUnit unit: archers) {
+            if (unit.attacking) {
+               utility  -= 200;
+            }
+
+            //health
+            utility -= unit.health;
+        }
+
+        utility += 600*(2 - archers.size());
 
         return utility;
     }
