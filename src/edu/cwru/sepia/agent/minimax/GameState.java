@@ -178,48 +178,62 @@ public class GameState {
 
         try {
             StateUnit footman2 = footmen.get(1);
+            StateUnit otherFootman2 = newState.footmen.get(1);
+            otherFootman2.health = footman2.health;
+            otherFootman2.position = footman2.position.copy();
         }
         catch (ArrayIndexOutOfBoundsException e) {
-
+            newState.footmen.remove(1);
         }
 
         StateUnit archer1 = archers.get(0);
-        StateUnit archer2 = archers.get(1);
+        StateUnit otherArcher1 = newState.archers.get(0);
+        otherArcher1.health = archer1.health;
+        otherArcher1.position = archer1.position.copy();
+
+        try {
+            StateUnit archer2 = archers.get(1);
+            StateUnit otherArcher2 = newState.archers.get(1);
+            otherArcher2.health = archer2.health;
+            otherArcher2.position = archer2.position.copy();
+        }
+        catch (ArrayIndexOutOfBoundsException e) {
+            newState.archers.remove(1);
+        }
 
     }
 
     private void generateFootmenChildren(List<GameStateChild> children){
         StateUnit footman1 = footmen.get(0);
-        StateUnit footman2 = footmen.get(1);
-        for (Direction direction1: Direction.values()) {
-            for (Direction direction2: Direction.values()) {
-                int x1 = footman1.getXPosition() + direction1.xComponent();
-                int y1 = footman1.getYPosition() + direction1.yComponent();
-                int x2 = footman2.getXPosition() + direction2.xComponent();
-                int y2 = footman2.getYPosition() + direction2.yComponent();
-                if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode(x2, y2) && notTheSameMove(x1, x2, y1, y2)) {
-                    GameStateChild child = new GameStateChild(oldState);
-                    updateChildState(child.state);
-                    Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
-                    StateUnit footman1Target = nextToArcher(footman1);
-                    StateUnit footman2Target = nextToArcher(footman2);
-                    Action action1;
-                    Action action2;
-                    if (footman1Target != null) {
-                        action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, footman1Target.ID);
-                    } else {
-                        action1 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction1);
+        try {
+            StateUnit footman2 = footmen.get(1);
+            for (Direction direction1 : Direction.values()) {
+                for (Direction direction2 : Direction.values()) {
+                    int x1 = footman1.getXPosition() + direction1.xComponent();
+                    int y1 = footman1.getYPosition() + direction1.yComponent();
+                    int x2 = footman2.getXPosition() + direction2.xComponent();
+                    int y2 = footman2.getYPosition() + direction2.yComponent();
+                    // TODO: check for diagonal directions(illegal)
+                    if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode(x2, y2) && notTheSameMove(x1, x2, y1, y2)) {
+                        GameStateChild child = new GameStateChild(oldState);
+                        updateChildState(child.state);
+                        Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                        Action action1 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction1);
+                        child.state.footmen.get(0).position.x = x1;
+                        child.state.footmen.get(0).position.y = y1;
+                        Action action2 = new DirectedAction(footman2.ID, ActionType.PRIMITIVEMOVE, direction2);
+                        child.state.footmen.get(1).position.x = x2;
+                        child.state.footmen.get(1).position.y = y2;
+                        actionSet.put(0, action1);
+                        actionSet.put(1, action2);
+                        child.action = actionSet;
+                        children.add(child);
                     }
-                    if (footman2Target != null) {
-                        action2 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, footman2Target.ID);
-                    } else {
-                        action2 = new DirectedAction(footman2.ID, ActionType.PRIMITIVEMOVE, direction2);
-                    }
-                    actionSet.put(0, action1);
-                    actionSet.put(1, action2);
-
                 }
             }
+        }
+        catch (ArrayIndexOutOfBoundsException e) {
+            //TODO: case where only one footman is live
         }
     }
 
