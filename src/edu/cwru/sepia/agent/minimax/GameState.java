@@ -88,7 +88,12 @@ public class GameState {
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
-        return 0.0;
+        double utility = 0.0;
+        for(StateUnit unit: footmen) {
+            
+        }
+
+        return utility;
     }
 
     /**
