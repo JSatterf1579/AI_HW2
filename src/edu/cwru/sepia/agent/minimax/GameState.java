@@ -154,8 +154,19 @@ public class GameState {
     }
 
     private void updateChildState(GameState newState) {
+        newState.myTurn = !myTurn;
         StateUnit footman1 = footmen.get(0);
-        StateUnit footman2 = footmen.get(1);
+        StateUnit otherFootman1 = newState.footmen.get(0);
+        otherFootman1.health = footman1.health;
+        otherFootman1.position = footman1.position.copy();
+
+        try {
+            StateUnit footman2 = footmen.get(1);
+        }
+        catch (ArrayIndexOutOfBoundsException e) {
+
+        }
+
         StateUnit archer1 = archers.get(0);
         StateUnit archer2 = archers.get(1);
 
@@ -395,6 +406,10 @@ public class GameState {
             this.y = view.getYPosition();
         }
 
+        public Position copy() {
+            return new Position(x, y);
+        }
+
     }
 
     private class StateUnit {
@@ -403,6 +418,7 @@ public class GameState {
         public int health;
         public int range;
         public int damage;
+        public boolean attacking = false;
 
         public StateUnit(edu.cwru.sepia.environment.model.state.Unit.UnitView realUnit) {
             this.ID = realUnit.getID();
