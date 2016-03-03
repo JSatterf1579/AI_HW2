@@ -176,13 +176,12 @@ public class GameState {
         otherFootman1.health = footman1.health;
         otherFootman1.position = footman1.position.copy();
 
-        try {
+        if (footmen.size() == 2) {
             StateUnit footman2 = footmen.get(1);
             StateUnit otherFootman2 = newState.footmen.get(1);
             otherFootman2.health = footman2.health;
             otherFootman2.position = footman2.position.copy();
-        }
-        catch (ArrayIndexOutOfBoundsException e) {
+        } else {
             newState.footmen.remove(1);
         }
 
@@ -191,13 +190,13 @@ public class GameState {
         otherArcher1.health = archer1.health;
         otherArcher1.position = archer1.position.copy();
 
-        try {
+        if (archers.size() == 2) {
             StateUnit archer2 = archers.get(1);
             StateUnit otherArcher2 = newState.archers.get(1);
             otherArcher2.health = archer2.health;
             otherArcher2.position = archer2.position.copy();
         }
-        catch (ArrayIndexOutOfBoundsException e) {
+        else {
             newState.archers.remove(1);
         }
 
@@ -205,7 +204,7 @@ public class GameState {
 
     private void generateFootmenChildren(List<GameStateChild> children){
         StateUnit footman1 = footmen.get(0);
-        try {
+        if (footmen.size() == 2) {
             StateUnit footman2 = footmen.get(1);
             for (Direction direction1 : Direction.values()) {
                 for (Direction direction2 : Direction.values()) {
@@ -231,8 +230,7 @@ public class GameState {
                     }
                 }
             }
-        }
-        catch (ArrayIndexOutOfBoundsException e) {
+        }else {
             //TODO: case where only one footman is live
         }
     }
