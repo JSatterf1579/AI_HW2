@@ -21,12 +21,14 @@ import java.util.*;
  */
 public class GameState {
 
+    boolean myTurn = true;
     Double utility;
     List<StateUnit> footmen = new ArrayList<StateUnit>();
     List<StateUnit> archers = new ArrayList<StateUnit>();;
     List<Position> resources = new ArrayList<Position>();
     int xExtent;
     int yExtent;
+    State.StateView oldState;
 
     /**
      * You will implement this constructor. It will
@@ -64,6 +66,7 @@ public class GameState {
         }
         xExtent = state.getXExtent();
         yExtent = state.getYExtent();
+        oldState = state;
     }
 
     /**
@@ -104,9 +107,9 @@ public class GameState {
      *
      * @return All possible actions and their associated resulting game state
      */
-    public List<GameStateChild> getChildren(MinimaxAlphaBeta.MinimaxState turn) {
+    public List<GameStateChild> getChildren() {
         ArrayList<GameStateChild> children = new ArrayList<GameStateChild>();
-        if (turn == MinimaxAlphaBeta.MinimaxState.MAX) {
+        if (myTurn) {
             generateFootmenChildren(children);
         } else {
             generateArcherChildren(children);
@@ -132,6 +135,27 @@ public class GameState {
         return true;
     }
 
+    private boolean notTheSameMove(int x1, int x2, int y1, int y2) {
+        return (x1 != x2 && y1 != y2);
+    }
+
+    private StateUnit nextToArcher(StateUnit footman) {
+        for (StateUnit archer: archers) {
+            if (footman.nextTo(archer)) {
+                return archer;
+            }
+        }
+        return null;
+    }
+
+    private void updateChildState(GameState newState) {
+        StateUnit footman1 = footmen.get(0);
+        StateUnit footman2 = footmen.get(1);
+        StateUnit archer1 = archers.get(0);
+        StateUnit archer2 = archers.get(1);
+
+    }
+
     private void generateFootmenChildren(List<GameStateChild> children){
         StateUnit footman1 = footmen.get(0);
         StateUnit footman2 = footmen.get(1);
@@ -141,23 +165,33 @@ public class GameState {
                 int y1 = footman1.getYPosition() + direction1.yComponent();
                 int x2 = footman2.getXPosition() + direction2.xComponent();
                 int y2 = footman2.getYPosition() + direction2.yComponent();
-                if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode((x2, y2))) {
+                if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode(x2, y2) && notTheSameMove(x1, x2, y1, y2)) {
+                    GameStateChild child = new GameStateChild(oldState);
+                    updateChildState(child.state);
                     Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
-                    Action action1 = Action.createPrimitiveMove(footman1.ID, direction1);
-                    Action action2 = Action.createPrimitiveMove(footman2.ID, direction2);
+                    StateUnit footman1Target = nextToArcher(footman1);
+                    StateUnit footman2Target = nextToArcher(footman2);
+                    Action action1;
+                    Action action2;
+                    if (footman1Target != null) {
+                        action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, footman1Target.ID);
+                    } else {
+                        action1 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction1);
+                    }
+                    if (footman2Target != null) {
+                        action2 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, footman2Target.ID);
+                    } else {
+                        action2 = new DirectedAction(footman2.ID, ActionType.PRIMITIVEMOVE, direction2);
+                    }
                     actionSet.put(0, action1);
                     actionSet.put(1, action2);
-                    State.StateView newState;
+
                 }
             }
         }
     }
 
     private void generateArcherChildren(List<GameStateChild> children) {
-
-    }
-
-    private void copyState(GameState) {
 
     }
 
@@ -198,6 +232,14 @@ public class GameState {
 
         public int getYPosition() {
             return position.y;
+        }
+
+        public boolean nextTo(StateUnit otherUnit) {
+            return (1 == Math.max(Math.abs(this.getXPosition() - otherUnit.getXPosition()), Math.abs(this.getYPosition() - otherUnit.getYPosition())));
+        }
+
+        public boolean alive() {
+            return (this.health > 0);
         }
     }
 }
