@@ -161,6 +161,187 @@ public class GameState {
 
     }
 
+    private int getAStarPathLength(Position start, Position end, List<ResourceNode.ResourceView> resources, int xExtent, int yExtent) {
+
+        boolean done = false;
+        MapLocation current = null;
+        PriorityQueue<MapLocation> nextLocs = new PriorityQueue<>();
+        Set<MapLocation> closedList = new HashSet<>();
+
+        //Transform Positions to map locations
+        MapLocation startLocation = new MapLocation(start.x, start.y);
+        MapLocation endLocation = new MapLocation(end.x, end.y);
+
+        startLocation.cost = 0;
+        startLocation.heuristic = chebyshev(startLocation, endLocation);
+        nextLocs.add(startLocation);
+
+        while(nextLocs.peek() != null) {
+            if(done){
+                int pathLength = 0;
+                while (current.cameFrom != null) {
+                    pathLength++;
+                    current = current.cameFrom;
+                }
+                return pathLength;
+            }
+
+            current = nextLocs.poll();
+            closedList.add(current);
+            List<MapLocation> neighbors = getValidNeighbors(current, xExtent, yExtent);
+            for(MapLocation neighbor : neighbors){
+                neighbor.heuristic = chebyshev(neighbor, endLocation);
+                neighbor.cost = current.cost + 1;
+
+                if(closedList.contains(neighbor)) {
+                    continue;
+                }
+                if(!nextLocs.contains(neighbor)) {
+                    nextLocs.add(neighbor);
+                } else if(current.cost + 1 >= neighbor.cost) {
+                    continue;
+                }
+
+                neighbor.cameFrom = current;
+            }
+            if (current.equals(endLocation)) {
+                done = true;
+            }
+
+        }
+
+        return Integer.MAX_VALUE;
+
+    }
+
+    private List<MapLocation> getValidNeighbors(MapLocation current, int xExtent, int yExtent) {
+        List<MapLocation> neighborList = new ArrayList<>();
+
+        for (int x = -1; x < 2; x=x+2) {
+            for (int y = -1; y < 2; y=y+2) { // iterate over all nodes around current
+                if (current.x + x >= 0 && current.x + x < xExtent && current.y + y >= 0 && current.y + y < yExtent &&(x != 0 || y != 0)) { // check if it's on the map
+                    MapLocation test = new MapLocation(current.x + x, current.y + y);
+                    if (!isLocationOccupied(current.x, current.y)) { // check if the location is occupied
+                        neighborList.add(test);
+                    }
+                }
+            }
+        }
+
+        return neighborList;
+    }
+
+    private boolean isLocationOccupied(int x, int y)
+    {
+        for(StateUnit unit: footmen) {
+            if(unit.getXPosition() == x && unit.getYPosition() ==y) {
+                return true;
+            }
+        }
+
+        for(StateUnit unit: archers) {
+            if(unit.getXPosition() == x && unit.getYPosition() ==y) {
+                return true;
+            }
+        }
+
+        for(Position resource : resources) {
+            if(resource.x == x && resource.y == y) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private float chebyshev(MapLocation a, MapLocation b) {
+        return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+    }
+
+    private class MapLocation {
+        public int x, y;
+
+        public MapLocation cameFrom; // previous location on map from search
+
+        public float cost; // Cost of reaching this location on the map from the start node
+
+        public float heuristic; // the chebyshev distance from this node to the goal
+
+        /**
+         * Constructor used to initialize a MapLocation in search.
+         * @param x the column that the cell is in
+         * @param y the row the cell is in
+         * @param cameFrom the previous cell in the A* search
+         * @param cost the cost to reach this node in A* search
+         * @param heuristic the chebyshev distance from this cell to the goal
+         */
+        public MapLocation(int x, int y, MapLocation cameFrom, float cost, float heuristic)
+        {
+            this.x = x;
+            this.y = y;
+            this.cameFrom = cameFrom;
+            this.cost = cost;
+            this.heuristic = heuristic;
+        }
+
+        /**
+         * Constructor used to initialize a MapLocation when all info is not known.
+         * @param x the column that the cell is in
+         * @param y the row the cell is in
+         */
+        public MapLocation(int x, int y) {
+            this.x = x;
+            this.y = y;
+            this.cost = Integer.MAX_VALUE;
+            this.heuristic = Integer.MAX_VALUE;
+            this.cameFrom = null;
+        }
+
+        /**
+         * Returns true if the given object is a MapLocation with the same coordinates.
+         * @param other The other cell in question
+         * @return
+         */
+        public boolean equals(Object other) {
+
+            if (other != null && other instanceof  MapLocation) {
+                MapLocation oMap = (MapLocation)other;
+                if (this.x == oMap.x && this.y == oMap.y) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            return  false;
+        }
+
+        /**
+         * Used in Priority queues to order MapLocations.  A MapLocation is "less" when
+         * it has a lower total cost than another MapLocation
+         * @param other
+         * @return -1 if less, 0 if same, 1 if more
+         */
+        public int compareTo(MapLocation other) {
+            return Float.compare(this.heuristic + this.cost, other.heuristic + other.cost);
+        }
+
+        /**
+         * Used for hashcoding
+         * @return the string version of the coordinates of the cell
+         */
+        public String toString() {
+            return "(" + x + "," + y + ")";
+        }
+
+        /**
+         * Implemented to allow for ArrayList.contains to work
+         * @return the hash of the toString of this object. Equivalent cells will hash to the same value
+         */
+        public int hashCode() {
+            return this.toString().hashCode();
+        }
+    }
+
     private class Position {
         public int x;
         public int y;
