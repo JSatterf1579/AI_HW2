@@ -56,10 +56,18 @@ public class GameState {
         for (Unit.UnitView footman: origFootmen) {
             footmen.add(new StateUnit(footman));
         }
+        for (StateUnit footman: footmen) {
+            footman.damage = 10;
+        }
+
         List<Unit.UnitView> origArchers = state.getUnits(1);
         for (Unit.UnitView archer: origArchers) {
-            footmen.add(new StateUnit(archer));
+            archers.add(new StateUnit(archer));
         }
+        for (StateUnit archer: archers) {
+            archer.damage = 6;
+        }
+
         List<ResourceNode.ResourceView> origNodes = state.getAllResourceNodes();
         for (ResourceNode.ResourceView resource: origNodes) {
             resources.add(new Position(resource));
@@ -67,6 +75,19 @@ public class GameState {
         xExtent = state.getXExtent();
         yExtent = state.getYExtent();
         oldState = state;
+    }
+
+    public static void removeDeadUnits(GameState state) {
+        for (StateUnit archer: state.archers) {
+            if (archer.isDead()) {
+                state.archers.remove(archer);
+            }
+        }
+        for (StateUnit footman: state.footmen) {
+            if (footman.isDead()) {
+                state.footmen.remove(footman);
+            }
+        }
     }
 
     /**
@@ -171,6 +192,7 @@ public class GameState {
 
     private void updateChildState(GameState newState) {
         newState.myTurn = !myTurn;
+
         StateUnit footman1 = footmen.get(0);
         StateUnit otherFootman1 = newState.footmen.get(0);
         otherFootman1.health = footman1.health;
@@ -204,6 +226,7 @@ public class GameState {
 
     private void generateFootmenChildren(List<GameStateChild> children){
         StateUnit footman1 = footmen.get(0);
+        StateUnit archer1 = archers.get(0);
         if (footmen.size() == 2) {
             StateUnit footman2 = footmen.get(1);
             for (Direction direction1 : Direction.values()) {
@@ -212,7 +235,7 @@ public class GameState {
                     int y1 = footman1.getYPosition() + direction1.yComponent();
                     int x2 = footman2.getXPosition() + direction2.xComponent();
                     int y2 = footman2.getYPosition() + direction2.yComponent();
-                    // TODO: check for diagonal directions(illegal)
+                    // TODO: check for diagonal directions(illegal), check for move on top of archer
                     if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode(x2, y2) && notTheSameMove(x1, x2, y1, y2)) {
                         GameStateChild child = new GameStateChild(oldState);
                         updateChildState(child.state);
@@ -230,8 +253,206 @@ public class GameState {
                     }
                 }
             }
+            if (footman1.nextTo(archer1)) {
+                for (Direction direction: Direction.values()) {
+                    int x = footman2.getXPosition() + direction.xComponent();
+                    int y = footman2.getYPosition() + direction.yComponent();
+                    if (isInMap(x, y) && notOnResourceNode(x, y) && notTheSameMove(x, y, footman1.getXPosition(), footman1.getYPosition())) {
+                        GameStateChild child = new GameStateChild(oldState);
+                        updateChildState(child.state);
+                        Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                        Action action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, archer1.ID);
+                        child.state.footmen.get(0).attacking = true;
+                        child.state.archers.get(0).health -= footman1.damage;
+                        Action action2 = new DirectedAction(footman2.ID, ActionType.PRIMITIVEMOVE, direction);
+                        child.state.footmen.get(1).position.x = x;
+                        child.state.footmen.get(1).position.y = y;
+                        removeDeadUnits(child.state);
+                        actionSet.put(0, action1);
+                        actionSet.put(1, action2);
+                        child.action = actionSet;
+                        children.add(child);
+                    }
+                }
+            }
+            if (footman2.nextTo(archer1)) {
+                for (Direction direction: Direction.values()) {
+                    int x = footman1.getXPosition() + direction.xComponent();
+                    int y = footman1.getYPosition() + direction.yComponent();
+                    if (isInMap(x, y) && notOnResourceNode(x, y) && notTheSameMove(x, y, footman2.getXPosition(), footman2.getYPosition())) {
+                        GameStateChild child = new GameStateChild(oldState);
+                        updateChildState(child.state);
+                        Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                        Action action1 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, archer1.ID);
+                        child.state.footmen.get(1).attacking = true;
+                        child.state.archers.get(0).health -= footman2.damage;
+                        Action action2 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction);
+                        child.state.footmen.get(0).position.x = x;
+                        child.state.footmen.get(0).position.y = y;
+                        removeDeadUnits(child.state);
+                        actionSet.put(0, action1);
+                        actionSet.put(1, action2);
+                        child.action = actionSet;
+                        children.add(child);
+                    }
+                }
+            }
+            if (footman1.nextTo(archer1) && footman2.nextTo(archer1)) {
+                GameStateChild child = new GameStateChild(oldState);
+                updateChildState(child.state);
+                Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                Action action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, archer1.ID);
+                child.state.footmen.get(0).attacking = true;
+                child.state.archers.get(0).health -= footman1.damage;
+                Action action2 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, archer1.ID);
+                child.state.footmen.get(1).attacking = true;
+                child.state.archers.get(0).health -= footman2.health;
+                removeDeadUnits(child.state);
+                actionSet.put(0, action1);
+                actionSet.put(1, action2);
+                child.action = actionSet;
+                children.add(child);
+            }
+
+            if (archers.size() == 2) {
+                StateUnit archer2 = archers.get(1);
+                if (footman1.nextTo(archer2)) {
+                    for (Direction direction: Direction.values()) {
+                        int x = footman2.getXPosition() + direction.xComponent();
+                        int y = footman2.getYPosition() + direction.yComponent();
+                        if (isInMap(x, y) && notOnResourceNode(x, y) && notTheSameMove(x, y, footman1.getXPosition(), footman1.getYPosition())) {
+                            GameStateChild child = new GameStateChild(oldState);
+                            updateChildState(child.state);
+                            Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                            Action action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, archer2.ID);
+                            child.state.footmen.get(0).attacking = true;
+                            child.state.archers.get(1).health -= footman1.damage;
+                            Action action2 = new DirectedAction(footman2.ID, ActionType.PRIMITIVEMOVE, direction);
+                            child.state.footmen.get(1).position.x = x;
+                            child.state.footmen.get(1).position.y = y;
+                            removeDeadUnits(child.state);
+                            actionSet.put(0, action1);
+                            actionSet.put(1, action2);
+                            child.action = actionSet;
+                            children.add(child);
+                        }
+                    }
+                }
+                if (footman2.nextTo(archer2)) {
+                    for (Direction direction: Direction.values()) {
+                        int x = footman1.getXPosition() + direction.xComponent();
+                        int y = footman1.getYPosition() + direction.yComponent();
+                        if (isInMap(x, y) && notOnResourceNode(x, y) && notTheSameMove(x, footman2.getXPosition(), y, footman2.getYPosition())) {
+                            GameStateChild child = new GameStateChild(oldState);
+                            updateChildState(child.state);
+                            Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                            Action action1 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, archer2.ID);
+                            child.state.footmen.get(1).attacking = true;
+                            child.state.archers.get(1).health -= footman2.damage;
+                            Action action2 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction);
+                            child.state.footmen.get(0).position.x = x;
+                            child.state.footmen.get(0).position.y = y;
+                            removeDeadUnits(child.state);
+                            actionSet.put(0, action1);
+                            actionSet.put(1, action2);
+                            child.action = actionSet;
+                            children.add(child);
+                        }
+                    }
+                }
+                if (footman1.nextTo(archer1) && footman2.nextTo(archer2)) {
+                    GameStateChild child = new GameStateChild(oldState);
+                    updateChildState(child.state);
+                    Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                    Action action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, archer1.ID);
+                    child.state.footmen.get(0).attacking = true;
+                    child.state.archers.get(0).health -= footman1.damage;
+                    Action action2 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, archer2.ID);
+                    child.state.footmen.get(1).attacking = true;
+                    child.state.archers.get(1).health -= footman2.health;
+                    removeDeadUnits(child.state);
+                    actionSet.put(0, action1);
+                    actionSet.put(1, action2);
+                    child.action = actionSet;
+                    children.add(child);
+                }
+                if (footman1.nextTo(archer2) && footman2.nextTo(archer2)) {
+                    GameStateChild child = new GameStateChild(oldState);
+                    updateChildState(child.state);
+                    Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                    Action action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, archer2.ID);
+                    child.state.footmen.get(0).attacking = true;
+                    child.state.archers.get(1).health -= footman1.damage;
+                    Action action2 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, archer2.ID);
+                    child.state.footmen.get(1).attacking = true;
+                    child.state.archers.get(1).health -= footman2.health;
+                    removeDeadUnits(child.state);
+                    actionSet.put(0, action1);
+                    actionSet.put(1, action2);
+                    child.action = actionSet;
+                    children.add(child);
+                }
+                if (footman1.nextTo(archer2) && footman2.nextTo(archer1)) {
+                    GameStateChild child = new GameStateChild(oldState);
+                    updateChildState(child.state);
+                    Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                    Action action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, archer2.ID);
+                    child.state.footmen.get(0).attacking = true;
+                    child.state.archers.get(1).health -= footman1.damage;
+                    Action action2 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, archer1.ID);
+                    child.state.footmen.get(1).attacking = true;
+                    child.state.archers.get(0).health -= footman2.health;
+                    removeDeadUnits(child.state);
+                    actionSet.put(0, action1);
+                    actionSet.put(1, action2);
+                    child.action = actionSet;
+                    children.add(child);
+                }
+            }
         }else {
-            //TODO: case where only one footman is live
+            for (Direction direction1 : Direction.values()) {
+                int x = footman1.getXPosition() + direction1.xComponent();
+                int y = footman1.getYPosition() + direction1.yComponent();
+                // TODO: check for diagonal directions(illegal), check for move on top of archer
+                if (isInMap(x, y) && notOnResourceNode(x, y)) {
+                    GameStateChild child = new GameStateChild(oldState);
+                    updateChildState(child.state);
+                    Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                    Action action1 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction1);
+                    child.state.footmen.get(0).position.x = x;
+                    child.state.footmen.get(0).position.y = y;
+                    actionSet.put(0, action1);
+                    child.action = actionSet;
+                    children.add(child);
+                }
+            }
+            if (footman1.nextTo(archer1)) {
+                GameStateChild child = new GameStateChild(oldState);
+                updateChildState(child.state);
+                Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                Action action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, archer1.ID);
+                child.state.footmen.get(0).attacking = true;
+                child.state.archers.get(0).health -= footman1.damage;
+                removeDeadUnits(child.state);
+                actionSet.put(0, action1);
+                child.action = actionSet;
+                children.add(child);
+            }
+            if (archers.size() == 2) {
+                StateUnit archer2 = archers.get(1);
+                if (footman1.nextTo(archer2)) {
+                    GameStateChild child = new GameStateChild(oldState);
+                    updateChildState(child.state);
+                    Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                    Action action1 = new TargetedAction(footman1.ID, ActionType.PRIMITIVEATTACK, archer2.ID);
+                    child.state.footmen.get(0).attacking = true;
+                    child.state.archers.get(1).health -= footman1.damage;
+                    removeDeadUnits(child.state);
+                    actionSet.put(0, action1);
+                    child.action = actionSet;
+                    children.add(child);
+                }
+            }
         }
     }
 
@@ -468,8 +689,8 @@ public class GameState {
             return (1 == Math.max(Math.abs(this.getXPosition() - otherUnit.getXPosition()), Math.abs(this.getYPosition() - otherUnit.getYPosition())));
         }
 
-        public boolean alive() {
-            return (this.health > 0);
+        public boolean isDead() {
+            return (this.health <= 0);
         }
     }
 }
