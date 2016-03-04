@@ -97,15 +97,24 @@ public class GameState {
     }
 
     public static void removeDeadUnits(GameState state) {
+        ArrayList<StateUnit> deadGuys = new ArrayList<>();
         for (StateUnit archer: state.archers) {
             if (archer.isDead()) {
-                state.archers.remove(archer);
+                deadGuys.add(archer);
             }
         }
+        for (StateUnit unit: deadGuys) {
+            state.archers.remove(unit);
+        }
+
+        deadGuys = new ArrayList<>();
         for (StateUnit footman: state.footmen) {
             if (footman.isDead()) {
-                state.footmen.remove(footman);
+                deadGuys.remove(footman);
             }
+        }
+        for (StateUnit unit: deadGuys) {
+            state.footmen.remove(unit);
         }
     }
 
