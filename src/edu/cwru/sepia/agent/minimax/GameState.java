@@ -81,17 +81,7 @@ public class GameState {
         yExtent = state.getYExtent();
         oldState = state;
 
-        for(int i = 0; i < footmen.size(); i++) {
-            int distance = Integer.MAX_VALUE;
-            for(StateUnit archer : archers) {
-                int testDist = getAStarPathLength(footmen.get(i).position, archer.position, xExtent, yExtent);
-                if (testDist < distance) {
-                    distance = testDist;
-                }
-            }
-            bestDistance.add(distance);
-            System.out.println("Distance = " + distance);
-        }
+
 
 
     }
@@ -137,6 +127,19 @@ public class GameState {
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
+        if (bestDistance.size() == 0) {
+            for (int i = 0; i < footmen.size(); i++) {
+                int distance = Integer.MAX_VALUE;
+                for (StateUnit archer : archers) {
+                    int testDist = getAStarPathLength(footmen.get(i).position, archer.position, xExtent, yExtent);
+                    if (testDist < distance) {
+                        distance = testDist;
+                    }
+                }
+                bestDistance.add(distance);
+                //System.out.println("Distance = " + distance);
+            }
+        }
         double utility = 0.0;
         for(int i = 0; i < footmen.size(); i++) {
             StateUnit unit = footmen.get(i);
@@ -151,7 +154,7 @@ public class GameState {
 
         for(StateUnit unit: archers) {
             if (unit.attacking) {
-               //utility  -= 200;
+               utility  -= 1;
             }
 
             //health
@@ -269,7 +272,7 @@ public class GameState {
                 }
             }
             newState.bestDistance.add(distance);
-            System.out.println("Distance = " + distance);
+            //System.out.println("Distance = " + distance);
         }
     }
 
