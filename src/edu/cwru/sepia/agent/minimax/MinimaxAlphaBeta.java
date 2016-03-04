@@ -43,6 +43,8 @@ public class MinimaxAlphaBeta extends Agent {
                 Double.POSITIVE_INFINITY,
                 MinimaxState.MAX);
 
+        System.out.println(bestChild.action);
+
         return bestChild.action;
     }
 
@@ -87,10 +89,12 @@ public class MinimaxAlphaBeta extends Agent {
 
         if (maxOrMin == MinimaxState.MAX) {
             GameStateChild v = null;
+            GameStateChild realV = null;
             for(int i = 0; i < children.size(); i++) {
                 GameStateChild vPrime = alphaBetaSearch(children.get(i), depth - 1, alpha, beta, MinimaxState.MIN);
                 if(v == null || vPrime.state.getUtility() > v.state.getUtility()) {
                     v = vPrime;
+                    realV = children.get(i);
                 }
                 if (v.state.getUtility() > alpha)
                 {
@@ -101,15 +105,17 @@ public class MinimaxAlphaBeta extends Agent {
                     break;
                 }
             }
-            return v;
+            return realV;
         }
 
         if (maxOrMin == MinimaxState.MIN) {
             GameStateChild v = null;
+            GameStateChild realV = null;
             for(int i = 0; i < children.size(); i++) {
                 GameStateChild vPrime = alphaBetaSearch(children.get(i), depth - 1, alpha, beta, MinimaxState.MIN);
                 if(v == null || vPrime.state.getUtility() < v.state.getUtility()) {
                     v = vPrime;
+                    realV = children.get(i);
                 }
                 if (v.state.getUtility() < beta)
                 {
@@ -120,7 +126,7 @@ public class MinimaxAlphaBeta extends Agent {
                     break;
                 }
             }
-            return v;
+            return realV;
         }
 
         return node;

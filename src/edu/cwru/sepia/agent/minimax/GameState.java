@@ -154,7 +154,7 @@ public class GameState {
 
         for(StateUnit unit: archers) {
             if (unit.attacking) {
-               utility  -= 1;
+               //utility  -= 2;
             }
 
             //health
