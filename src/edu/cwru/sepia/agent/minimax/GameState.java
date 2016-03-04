@@ -1,6 +1,7 @@
 package edu.cwru.sepia.agent.minimax;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.XPath;
+import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.action.DirectedAction;
@@ -26,7 +27,8 @@ public class GameState {
     boolean myTurn = true;
     Double utility;
     List<StateUnit> footmen = new ArrayList<StateUnit>();
-    List<StateUnit> archers = new ArrayList<StateUnit>();;
+    List<Integer> bestDistance = new ArrayList<>();
+    List<StateUnit> archers = new ArrayList<StateUnit>();
     List<Position> resources = new ArrayList<Position>();
     int xExtent;
     int yExtent;
@@ -74,9 +76,24 @@ public class GameState {
         for (ResourceNode.ResourceView resource: origNodes) {
             resources.add(new Position(resource));
         }
+
         xExtent = state.getXExtent();
         yExtent = state.getYExtent();
         oldState = state;
+
+        for(int i = 0; i < footmen.size(); i++) {
+            int distance = Integer.MAX_VALUE;
+            for(StateUnit archer : archers) {
+                int testDist = getAStarPathLength(footmen.get(i).position, archer.position, xExtent, yExtent);
+                if (testDist < distance) {
+                    distance = testDist;
+                }
+            }
+            bestDistance.add(distance);
+            System.out.println("Distance = " + distance);
+        }
+
+
     }
 
     public static void removeDeadUnits(GameState state) {
@@ -112,11 +129,13 @@ public class GameState {
      */
     public double getUtility() {
         double utility = 0.0;
-        for(StateUnit unit: footmen) {
+        for(int i = 0; i < footmen.size(); i++) {
+            StateUnit unit = footmen.get(i);
             if(unit.attacking) {
                 utility += 500;
             }
             //Distance
+            utility -= bestDistance.get(i);
             //health
             utility+=unit.health;
         }
@@ -699,12 +718,19 @@ public class GameState {
         List<MapLocation> neighborList = new ArrayList<>();
 
         for (int x = -1; x < 2; x=x+2) {
-            for (int y = -1; y < 2; y=y+2) { // iterate over all nodes around current
-                if (current.x + x >= 0 && current.x + x < xExtent && current.y + y >= 0 && current.y + y < yExtent &&(x != 0 || y != 0)) { // check if it's on the map
-                    MapLocation test = new MapLocation(current.x + x, current.y + y);
-                    if (!isLocationOccupied(current.x, current.y)) { // check if the location is occupied
-                        neighborList.add(test);
-                    }
+            if (current.x + x >= 0 && current.x + x < xExtent && current.y>= 0 && current.y< yExtent &&(x != 0)) { // check if it's on the map
+                MapLocation test = new MapLocation(current.x + x, current.y);
+                if (!isLocationOccupied(test.x, test.y)) { // check if the location is occupied
+                    neighborList.add(test);
+                }
+            }
+        }
+
+        for (int y = -1; y < 2; y=y+2) { // iterate over all nodes around current
+            if (current.x >= 0 && current.x < xExtent && current.y + y >= 0 && current.y + y < yExtent &&(y != 0)) { // check if it's on the map
+                MapLocation test = new MapLocation(current.x , current.y + y);
+                if (!isLocationOccupied(test.x, test.y)) { // check if the location is occupied
+                    neighborList.add(test);
                 }
             }
         }
@@ -739,7 +765,7 @@ public class GameState {
         return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
 
-    private class MapLocation {
+    private class MapLocation implements Comparable<MapLocation>{
         public int x, y;
 
         public MapLocation cameFrom; // previous location on map from search
