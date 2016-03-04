@@ -183,13 +183,13 @@ public class GameState {
         return (x1 != x2 && y1 != y2);
     }
 
-    private StateUnit nextToArcher(StateUnit footman) {
+    private boolean onTopOfArcher(int x, int y) {
         for (StateUnit archer: archers) {
-            if (footman.nextTo(archer)) {
-                return archer;
+            if (x == archer.getXPosition() && y == archer.getYPosition()) {
+                return true;
             }
         }
-        return null;
+        return false;
     }
 
     private void updateChildState(GameState newState) {
@@ -205,7 +205,7 @@ public class GameState {
             StateUnit otherFootman2 = newState.footmen.get(1);
             otherFootman2.health = footman2.health;
             otherFootman2.position = footman2.position.copy();
-        } else {
+        } else if (newState.footmen.size() == 2) {
             newState.footmen.remove(1);
         }
 
@@ -220,7 +220,7 @@ public class GameState {
             otherArcher2.health = archer2.health;
             otherArcher2.position = archer2.position.copy();
         }
-        else {
+        else if (newState.archers.size() == 2) {
             newState.archers.remove(1);
         }
 
@@ -232,13 +232,19 @@ public class GameState {
         if (footmen.size() == 2) {
             StateUnit footman2 = footmen.get(1);
             for (Direction direction1 : Direction.values()) {
+                if (direction1.equals(Direction.NORTHEAST) || direction1.equals(Direction.SOUTHEAST) || direction1.equals(Direction.SOUTHWEST) || direction1.equals(Direction.SOUTHEAST)) {
+                    continue;
+                }
                 for (Direction direction2 : Direction.values()) {
+                    if (direction2.equals(Direction.NORTHEAST) || direction2.equals(Direction.SOUTHEAST) || direction2.equals(Direction.SOUTHWEST) || direction2.equals(Direction.SOUTHEAST)) {
+                        continue;
+                    }
                     int x1 = footman1.getXPosition() + direction1.xComponent();
                     int y1 = footman1.getYPosition() + direction1.yComponent();
                     int x2 = footman2.getXPosition() + direction2.xComponent();
                     int y2 = footman2.getYPosition() + direction2.yComponent();
-                    // TODO: check for diagonal directions(illegal), check for move on top of archer
-                    if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode(x2, y2) && notTheSameMove(x1, x2, y1, y2)) {
+                    // TODO: check for move on top of archer
+                    if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode(x2, y2) && !onTopOfArcher(x1, y1) &&!onTopOfArcher(x2, y2) && notTheSameMove(x1, x2, y1, y2)) {
                         GameStateChild child = new GameStateChild(oldState);
                         updateChildState(child.state);
                         Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
@@ -257,9 +263,12 @@ public class GameState {
             }
             if (footman1.nextTo(archer1)) {
                 for (Direction direction: Direction.values()) {
+                    if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
+                        continue;
+                    }
                     int x = footman2.getXPosition() + direction.xComponent();
                     int y = footman2.getYPosition() + direction.yComponent();
-                    if (isInMap(x, y) && notOnResourceNode(x, y) && notTheSameMove(x, y, footman1.getXPosition(), footman1.getYPosition())) {
+                    if (isInMap(x, y) && notOnResourceNode(x, y) && !onTopOfArcher(x, y) && notTheSameMove(x, y, footman1.getXPosition(), footman1.getYPosition())) {
                         GameStateChild child = new GameStateChild(oldState);
                         updateChildState(child.state);
                         Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
@@ -279,9 +288,12 @@ public class GameState {
             }
             if (footman2.nextTo(archer1)) {
                 for (Direction direction: Direction.values()) {
+                    if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
+                        continue;
+                    }
                     int x = footman1.getXPosition() + direction.xComponent();
                     int y = footman1.getYPosition() + direction.yComponent();
-                    if (isInMap(x, y) && notOnResourceNode(x, y) && notTheSameMove(x, y, footman2.getXPosition(), footman2.getYPosition())) {
+                    if (isInMap(x, y) && notOnResourceNode(x, y) && !onTopOfArcher(x, y) && notTheSameMove(x, y, footman2.getXPosition(), footman2.getYPosition())) {
                         GameStateChild child = new GameStateChild(oldState);
                         updateChildState(child.state);
                         Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
@@ -320,9 +332,12 @@ public class GameState {
                 StateUnit archer2 = archers.get(1);
                 if (footman1.nextTo(archer2)) {
                     for (Direction direction: Direction.values()) {
+                        if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
+                            continue;
+                        }
                         int x = footman2.getXPosition() + direction.xComponent();
                         int y = footman2.getYPosition() + direction.yComponent();
-                        if (isInMap(x, y) && notOnResourceNode(x, y) && notTheSameMove(x, y, footman1.getXPosition(), footman1.getYPosition())) {
+                        if (isInMap(x, y) && notOnResourceNode(x, y) && !onTopOfArcher(x, y) && notTheSameMove(x, y, footman1.getXPosition(), footman1.getYPosition())) {
                             GameStateChild child = new GameStateChild(oldState);
                             updateChildState(child.state);
                             Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
@@ -342,9 +357,12 @@ public class GameState {
                 }
                 if (footman2.nextTo(archer2)) {
                     for (Direction direction: Direction.values()) {
+                        if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
+                            continue;
+                        }
                         int x = footman1.getXPosition() + direction.xComponent();
                         int y = footman1.getYPosition() + direction.yComponent();
-                        if (isInMap(x, y) && notOnResourceNode(x, y) && notTheSameMove(x, footman2.getXPosition(), y, footman2.getYPosition())) {
+                        if (isInMap(x, y) && notOnResourceNode(x, y) && !onTopOfArcher(x, y) && notTheSameMove(x, footman2.getXPosition(), y, footman2.getYPosition())) {
                             GameStateChild child = new GameStateChild(oldState);
                             updateChildState(child.state);
                             Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
@@ -412,15 +430,18 @@ public class GameState {
                 }
             }
         }else {
-            for (Direction direction1 : Direction.values()) {
-                int x = footman1.getXPosition() + direction1.xComponent();
-                int y = footman1.getYPosition() + direction1.yComponent();
-                // TODO: check for diagonal directions(illegal), check for move on top of archer
+            for (Direction direction : Direction.values()) {
+                if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
+                    continue;
+                }
+                int x = footman1.getXPosition() + direction.xComponent();
+                int y = footman1.getYPosition() + direction.yComponent();
+                // TODO: check for move on top of archer
                 if (isInMap(x, y) && notOnResourceNode(x, y)) {
                     GameStateChild child = new GameStateChild(oldState);
                     updateChildState(child.state);
                     Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
-                    Action action1 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction1);
+                    Action action1 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction);
                     child.state.footmen.get(0).position.x = x;
                     child.state.footmen.get(0).position.y = y;
                     actionSet.put(0, action1);
