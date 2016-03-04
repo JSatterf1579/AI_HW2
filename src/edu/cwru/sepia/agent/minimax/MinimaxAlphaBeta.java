@@ -112,7 +112,7 @@ public class MinimaxAlphaBeta extends Agent {
             GameStateChild v = null;
             GameStateChild realV = null;
             for(int i = 0; i < children.size(); i++) {
-                GameStateChild vPrime = alphaBetaSearch(children.get(i), depth - 1, alpha, beta, MinimaxState.MIN);
+                GameStateChild vPrime = alphaBetaSearch(children.get(i), depth - 1, alpha, beta, MinimaxState.MAX);
                 if(v == null || vPrime.state.getUtility() < v.state.getUtility()) {
                     v = vPrime;
                     realV = children.get(i);
