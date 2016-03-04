@@ -305,8 +305,8 @@ public class GameState {
                         child.state.footmen.get(1).position.x = x2;
                         child.state.footmen.get(1).position.y = y2;
                         updateChildDistance(child.state);
-                        actionSet.put(0, action1);
-                        actionSet.put(1, action2);
+                        actionSet.put(footman1.ID, action1);
+                        actionSet.put(footman2.ID, action2);
                         child.action = actionSet;
                         children.add(child);
                     }
@@ -331,8 +331,8 @@ public class GameState {
                         child.state.footmen.get(1).position.y = y;
                         removeDeadUnits(child.state);
                         updateChildDistance(child.state);
-                        actionSet.put(0, action1);
-                        actionSet.put(1, action2);
+                        actionSet.put(footman1.ID, action1);
+                        actionSet.put(footman2.ID, action2);
                         child.action = actionSet;
                         children.add(child);
                     }
@@ -357,8 +357,8 @@ public class GameState {
                         child.state.footmen.get(0).position.y = y;
                         removeDeadUnits(child.state);
                         updateChildDistance(child.state);
-                        actionSet.put(0, action1);
-                        actionSet.put(1, action2);
+                        actionSet.put(footman2.ID, action1);
+                        actionSet.put(footman1.ID, action2);
                         child.action = actionSet;
                         children.add(child);
                     }
@@ -373,11 +373,11 @@ public class GameState {
                 child.state.archers.get(0).health -= footman1.damage;
                 Action action2 = new TargetedAction(footman2.ID, ActionType.PRIMITIVEATTACK, archer1.ID);
                 child.state.footmen.get(1).attacking = true;
-                child.state.archers.get(0).health -= footman2.health;
+                child.state.archers.get(0).health -= footman2.damage;
                 removeDeadUnits(child.state);
                 updateChildDistance(child.state);
-                actionSet.put(0, action1);
-                actionSet.put(1, action2);
+                actionSet.put(footman1.ID, action1);
+                actionSet.put(footman2.ID, action2);
                 child.action = actionSet;
                 children.add(child);
             }
@@ -403,8 +403,8 @@ public class GameState {
                             child.state.footmen.get(1).position.y = y;
                             removeDeadUnits(child.state);
                             updateChildDistance(child.state);
-                            actionSet.put(0, action1);
-                            actionSet.put(1, action2);
+                            actionSet.put(footman1.ID, action1);
+                            actionSet.put(footman2.ID, action2);
                             child.action = actionSet;
                             children.add(child);
                         }
@@ -429,8 +429,8 @@ public class GameState {
                             child.state.footmen.get(0).position.y = y;
                             removeDeadUnits(child.state);
                             updateChildDistance(child.state);
-                            actionSet.put(0, action1);
-                            actionSet.put(1, action2);
+                            actionSet.put(footman2.ID, action1);
+                            actionSet.put(footman1.ID, action2);
                             child.action = actionSet;
                             children.add(child);
                         }
@@ -448,8 +448,8 @@ public class GameState {
                     child.state.archers.get(1).health -= footman2.health;
                     removeDeadUnits(child.state);
                     updateChildDistance(child.state);
-                    actionSet.put(0, action1);
-                    actionSet.put(1, action2);
+                    actionSet.put(footman1.ID, action1);
+                    actionSet.put(footman2.ID, action2);
                     child.action = actionSet;
                     children.add(child);
                 }
@@ -465,8 +465,8 @@ public class GameState {
                     child.state.archers.get(1).health -= footman2.health;
                     removeDeadUnits(child.state);
                     updateChildDistance(child.state);
-                    actionSet.put(0, action1);
-                    actionSet.put(1, action2);
+                    actionSet.put(footman1.ID, action1);
+                    actionSet.put(footman2.ID, action2);
                     child.action = actionSet;
                     children.add(child);
                 }
@@ -482,8 +482,8 @@ public class GameState {
                     child.state.archers.get(0).health -= footman2.health;
                     removeDeadUnits(child.state);
                     updateChildDistance(child.state);
-                    actionSet.put(0, action1);
-                    actionSet.put(1, action2);
+                    actionSet.put(footman1.ID, action1);
+                    actionSet.put(footman2.ID, action2);
                     child.action = actionSet;
                     children.add(child);
                 }
@@ -504,7 +504,7 @@ public class GameState {
                     child.state.footmen.get(0).position.x = x;
                     child.state.footmen.get(0).position.y = y;
                     updateChildDistance(child.state);
-                    actionSet.put(0, action1);
+                    actionSet.put(footman1.ID, action1);
                     child.action = actionSet;
                     children.add(child);
                 }
@@ -518,7 +518,7 @@ public class GameState {
                 child.state.archers.get(0).health -= footman1.damage;
                 updateChildDistance(child.state);
                 removeDeadUnits(child.state);
-                actionSet.put(0, action1);
+                actionSet.put(footman1.ID, action1);
                 child.action = actionSet;
                 children.add(child);
             }
@@ -533,7 +533,7 @@ public class GameState {
                     child.state.archers.get(1).health -= footman1.damage;
                     updateChildDistance(child.state);
                     removeDeadUnits(child.state);
-                    actionSet.put(0, action1);
+                    actionSet.put(footman1.ID, action1);
                     child.action = actionSet;
                     children.add(child);
                 }
