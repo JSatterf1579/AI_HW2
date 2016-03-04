@@ -24,15 +24,15 @@ import java.util.*;
  */
 public class GameState {
 
-    boolean myTurn = true;
-    Double utility;
-    List<StateUnit> footmen = new ArrayList<StateUnit>();
-    List<Integer> bestDistance = new ArrayList<>();
-    List<StateUnit> archers = new ArrayList<StateUnit>();
-    List<Position> resources = new ArrayList<Position>();
-    int xExtent;
+    boolean myTurn = true; // keeps track of whose turn it is
+    Double utility = null; // for caching the utility value
+    List<StateUnit> footmen = new ArrayList<StateUnit>(); //list of footmen on the map
+    List<Integer> bestDistance = new ArrayList<>(); // the best distance to an archer for each footman
+    List<StateUnit> archers = new ArrayList<StateUnit>(); // list of all archers
+    List<Position> resources = new ArrayList<Position>(); // all resources that we can't be on top of
+    int xExtent; //ends of the map
     int yExtent;
-    State.StateView oldState;
+    State.StateView oldState; // the original state to create more states with
 
     /**
      * You will implement this constructor. It will
@@ -56,6 +56,8 @@ public class GameState {
      * @param state Current state of the episode
      */
     public GameState(State.StateView state) {
+
+        //initialize all footmen and set their damage to an average
         List<Unit.UnitView> origFootmen = state.getUnits(0);
         for (Unit.UnitView footman: origFootmen) {
             footmen.add(new StateUnit(footman));
@@ -64,6 +66,7 @@ public class GameState {
             footman.damage = 10;
         }
 
+        //initialize all archers and set their damage to an average
         List<Unit.UnitView> origArchers = state.getUnits(1);
         for (Unit.UnitView archer: origArchers) {
             archers.add(new StateUnit(archer));
@@ -72,6 +75,7 @@ public class GameState {
             archer.damage = 6;
         }
 
+        //generate info about all the resources on the map
         List<ResourceNode.ResourceView> origNodes = state.getAllResourceNodes();
         for (ResourceNode.ResourceView resource: origNodes) {
             resources.add(new Position(resource));
@@ -86,6 +90,7 @@ public class GameState {
 
     }
 
+    // removes dead units for future states when a unit dies during their generation
     public static void removeDeadUnits(GameState state) {
         ArrayList<StateUnit> deadGuys = new ArrayList<>();
         for (StateUnit archer: state.archers) {
@@ -127,6 +132,10 @@ public class GameState {
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
+        if (this.utility != null) {
+            return this.utility;
+        }
+        // generate distances from each footman to closest target
         if (bestDistance.size() == 0) {
             for (int i = 0; i < footmen.size(); i++) {
                 int distance = Integer.MAX_VALUE;
@@ -140,7 +149,11 @@ public class GameState {
                 //System.out.println("Distance = " + distance);
             }
         }
+
         double utility = 0.0;
+
+        //prioritize states where footmen are attacking
+        //deprirtitize states where the footman moves away from the archer according to A*
         for(int i = 0; i < footmen.size(); i++) {
             StateUnit unit = footmen.get(i);
             if(unit.attacking) {
@@ -163,6 +176,7 @@ public class GameState {
 
         //utility += 600*(2 - archers.size());
 
+        this.utility = utility;
         return utility;
     }
 
@@ -184,6 +198,7 @@ public class GameState {
      */
     public List<GameStateChild> getChildren() {
         ArrayList<GameStateChild> children = new ArrayList<GameStateChild>();
+        // generate archer movement nodes or footmen movement nodes depending on whose turn it is
         if (myTurn) {
             generateFootmenChildren(children);
         } else {
@@ -192,6 +207,7 @@ public class GameState {
         return children;
     }
 
+    // determines whether or not a node is on the map
     private boolean isInMap(int x, int y) {
         if (x >= 0 && x < xExtent){
             if (y >= 0 && y < yExtent) {
@@ -201,6 +217,7 @@ public class GameState {
         return false;
     }
 
+    //determines whether or not the given node has a resource on it.
     private boolean notOnResourceNode(int x, int y) {
         for (Position resource: resources) {
             if (x == resource.x && y == resource.y) {
@@ -210,10 +227,12 @@ public class GameState {
         return true;
     }
 
+    //determines if the given x and y values represent the same node on the map
     private boolean notTheSameMove(int x1, int x2, int y1, int y2) {
         return (x1 != x2 && y1 != y2);
     }
 
+    //determines if the given coordinates are where an archer is
     private boolean onTopOfArcher(int x, int y) {
         for (StateUnit archer: archers) {
             if (x == archer.getXPosition() && y == archer.getYPosition()) {
@@ -223,6 +242,7 @@ public class GameState {
         return false;
     }
 
+    //updates the units in a child state to their positions and health of this state.
     private void updateChildState(GameState newState) {
         newState.myTurn = !myTurn;
 
@@ -259,6 +279,7 @@ public class GameState {
 
     }
 
+    // assigns values of bestDistance for each footman
     private void updateChildDistance(GameState newState) {
 
         newState.bestDistance.clear();
@@ -276,11 +297,16 @@ public class GameState {
         }
     }
 
+    // creates nodes where footmen have done actions
     private void generateFootmenChildren(List<GameStateChild> children){
+        //create our known living units
         StateUnit footman1 = footmen.get(0);
         StateUnit archer1 = archers.get(0);
+
+        //generate actions for when 2 footmen are alive
         if (footmen.size() == 2) {
             StateUnit footman2 = footmen.get(1);
+            // iterate over all legal movement directions
             for (Direction direction1 : Direction.values()) {
                 if (direction1.equals(Direction.NORTHEAST) || direction1.equals(Direction.SOUTHEAST) || direction1.equals(Direction.SOUTHWEST) || direction1.equals(Direction.SOUTHEAST)) {
                     continue;
@@ -293,18 +319,22 @@ public class GameState {
                     int y1 = footman1.getYPosition() + direction1.yComponent();
                     int x2 = footman2.getXPosition() + direction2.xComponent();
                     int y2 = footman2.getYPosition() + direction2.yComponent();
-                    // TODO: check for move on top of archer
+                    // check to see if the movement is legal
                     if (isInMap(x1, y1) && isInMap(x2, y2) && notOnResourceNode(x1, y1) && notOnResourceNode(x2, y2) && !onTopOfArcher(x1, y1) &&!onTopOfArcher(x2, y2) && notTheSameMove(x1, x2, y1, y2)) {
+                        //initialize child state
                         GameStateChild child = new GameStateChild(oldState);
                         updateChildState(child.state);
                         Map<Integer, Action> actionSet = new HashMap<Integer, Action>();
+                        //generate actions and apply them to child state
                         Action action1 = new DirectedAction(footman1.ID, ActionType.PRIMITIVEMOVE, direction1);
                         child.state.footmen.get(0).position.x = x1;
                         child.state.footmen.get(0).position.y = y1;
                         Action action2 = new DirectedAction(footman2.ID, ActionType.PRIMITIVEMOVE, direction2);
                         child.state.footmen.get(1).position.x = x2;
                         child.state.footmen.get(1).position.y = y2;
+                        //now we can calculate the A* distance
                         updateChildDistance(child.state);
+                        //add actions to actions set and child, and add child to children set
                         actionSet.put(footman1.ID, action1);
                         actionSet.put(footman2.ID, action2);
                         child.action = actionSet;
@@ -312,6 +342,7 @@ public class GameState {
                     }
                 }
             }
+            // the above actions are repeated for each possible combination of attacking and moving
             if (footman1.nextTo(archer1)) {
                 for (Direction direction: Direction.values()) {
                     if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
@@ -541,28 +572,37 @@ public class GameState {
         }
     }
 
+    //generate states where archers have done actions, nearly identical to the above footman method
     private void generateArcherChildren(List<GameStateChild> children) {
+        // start with states with one archer alive
         if(archers.size() == 1) {
             StateUnit archer = archers.get(0);
+            //iterate over all legal directions
             for (Direction direction : Direction.values()) {
                 if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
                     continue;
                 }
                 int x = archer.getXPosition() + direction.xComponent();
                 int y = archer.getYPosition() + direction.yComponent();
+                //check for map position legality
                 if(isInMap(x, y) && notOnResourceNode(x,y)) {
+                    //initialize child and actions set
                     GameStateChild child = new GameStateChild(oldState);
                     updateChildState(child.state);
                     Map<Integer, Action> actionSet = new HashMap<>();
+                    //generate actions and apply them to child state
                     Action action = new DirectedAction(archer.ID, ActionType.PRIMITIVEMOVE, direction);
                     actionSet.put(1, action);
                     child.state.archers.get(0).position.x = x;
                     child.state.archers.get(0).position.y = y;
+                    //generate new A* values
                     updateChildDistance(child.state);
+                    //prep the child and add it to the set
                     child.action = actionSet;
                     children.add(child);
                 }
             }
+            //check to see if the archer can attack any footmen, if so repeat the above process
             for (int i = 0; i < footmen.size(); i++) {
                 StateUnit footman = footmen.get(i);
                 if (isInRange(archer, footman)) {
@@ -578,6 +618,7 @@ public class GameState {
                     children.add(child);
                 }
             }
+            // repeat the above process for 2 archers
         } else if (archers.size() ==2) {
             StateUnit archer1 = archers.get(0);
             StateUnit archer2 = archers.get(1);
@@ -706,10 +747,12 @@ public class GameState {
         }
     }
 
+    //determines if an archer is able to attack a footman
     private boolean isInRange(StateUnit archer, StateUnit footman) {
         return  Math.abs(archer.getXPosition() - footman.getXPosition()) + Math.abs(archer.getYPosition() - footman.getYPosition()) <= archer.range;
     }
 
+    //performs A* between 2 positions on the map
     private int getAStarPathLength(Position start, Position end, int xExtent, int yExtent) {
 
         boolean done = false;
@@ -764,6 +807,7 @@ public class GameState {
 
     }
 
+    // returns all neighbors of the A* MapLocation
     private List<MapLocation> getValidNeighbors(MapLocation current, int xExtent, int yExtent) {
         List<MapLocation> neighborList = new ArrayList<>();
 
@@ -788,6 +832,7 @@ public class GameState {
         return neighborList;
     }
 
+    //determines if the MapLocation is occupied by a resource
     private boolean isLocationOccupied(int x, int y)
     {
         for(StateUnit unit: footmen) {
@@ -811,10 +856,12 @@ public class GameState {
         return false;
     }
 
+    //calculates the shortest axis distance between two points on the map
     private float chebyshev(MapLocation a, MapLocation b) {
         return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
 
+    // class used by A* to represent position on the map
     private class MapLocation implements Comparable<MapLocation>{
         public int x, y;
 
@@ -899,6 +946,7 @@ public class GameState {
         }
     }
 
+    //class used by GameState to represent a position on the map
     private class Position {
         public int x;
         public int y;
@@ -919,6 +967,7 @@ public class GameState {
 
     }
 
+    // class used by gamestate to represent archers and footmen
     private class StateUnit {
         public int ID;
         public Position position;
