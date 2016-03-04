@@ -157,7 +157,7 @@ public class GameState {
         for(int i = 0; i < footmen.size(); i++) {
             StateUnit unit = footmen.get(i);
             if(unit.attacking) {
-                utility += 500;
+                utility += 5000;
             }
             //Distance
             utility -= bestDistance.get(i);
