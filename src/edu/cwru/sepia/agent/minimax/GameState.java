@@ -249,6 +249,8 @@ public class GameState {
 
     private void updateChildDistance(GameState newState) {
 
+        newState.bestDistance.clear();
+
         for(int i = 0; i < newState.footmen.size(); i++) {
             int distance = Integer.MAX_VALUE;
             for(StateUnit archer : newState.archers) {
@@ -715,7 +717,7 @@ public class GameState {
             if(done){
                 int pathLength = 0;
                 current = current.cameFrom;
-                while (current.cameFrom != null) {
+                while (current != null && current.cameFrom != null) {
                     pathLength++;
                     current = current.cameFrom;
                 }
