@@ -142,7 +142,7 @@ public class GameState {
 
         for(StateUnit unit: archers) {
             if (unit.attacking) {
-               utility  -= 200;
+               //utility  -= 200;
             }
 
             //health
@@ -241,6 +241,18 @@ public class GameState {
         }
         else if (newState.archers.size() == 2) {
             newState.archers.remove(1);
+        }
+
+        for(int i = 0; i < footmen.size(); i++) {
+            int distance = Integer.MAX_VALUE;
+            for(StateUnit archer : archers) {
+                int testDist = getAStarPathLength(footmen.get(i).position, archer.position, xExtent, yExtent);
+                if (testDist < distance) {
+                    distance = testDist;
+                }
+            }
+            bestDistance.add(distance);
+            System.out.println("Distance = " + distance);
         }
 
     }
@@ -746,11 +758,11 @@ public class GameState {
             }
         }
 
-        for(StateUnit unit: archers) {
-            if(unit.getXPosition() == x && unit.getYPosition() ==y) {
-                return true;
-            }
-        }
+//        for(StateUnit unit: archers) {
+//            if(unit.getXPosition() == x && unit.getYPosition() ==y) {
+//                return true;
+//            }
+//        }
 
         for(Position resource : resources) {
             if(resource.x == x && resource.y == y) {

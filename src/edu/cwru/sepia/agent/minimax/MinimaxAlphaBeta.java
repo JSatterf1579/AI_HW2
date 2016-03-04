@@ -150,6 +150,6 @@ class StateComparator implements Comparator<GameStateChild> {
 
     @Override
     public int compare(GameStateChild o1, GameStateChild o2) {
-        return (int)(o1.state.getUtility() - o2.state.getUtility());
+        return (int)( o1.state.getUtility() - o2.state.getUtility());
     }
 }
