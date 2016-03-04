@@ -43,7 +43,7 @@ public class MinimaxAlphaBeta extends Agent {
                 Double.POSITIVE_INFINITY,
                 MinimaxState.MAX);
 
-        System.out.println(bestChild.action);
+
 
         return bestChild.action;
     }
@@ -85,42 +85,56 @@ public class MinimaxAlphaBeta extends Agent {
             return node;
         }
 
+        //Orders the children in heuristic order for pruning
         children = orderChildrenWithHeuristics(children);
 
+
+        //Pruning when on a max branch
         if (maxOrMin == MinimaxState.MAX) {
+            //Keep a reference for what you're actually returning and your comparison
             GameStateChild v = null;
             GameStateChild realV = null;
+            //Iterates through all children
             for(int i = 0; i < children.size(); i++) {
+                //Backing up values
                 GameStateChild vPrime = alphaBetaSearch(children.get(i), depth - 1, alpha, beta, MinimaxState.MIN);
+                //Backs up the value if it's bigger
                 if(v == null || vPrime.state.getUtility() > v.state.getUtility()) {
                     v = vPrime;
                     realV = children.get(i);
                 }
+                //Moves alpha if it's necessary
                 if (v.state.getUtility() > alpha)
                 {
                     alpha = v.state.getUtility();
                 }
+                //Breaks when there is no possible range of numbers
                 if (beta <= alpha)
                 {
                     break;
                 }
             }
+            //Returns the actual current object
             return realV;
         }
 
+        //For the enemy case
         if (maxOrMin == MinimaxState.MIN) {
             GameStateChild v = null;
             GameStateChild realV = null;
             for(int i = 0; i < children.size(); i++) {
                 GameStateChild vPrime = alphaBetaSearch(children.get(i), depth - 1, alpha, beta, MinimaxState.MAX);
+                //Backs up the smaller value
                 if(v == null || vPrime.state.getUtility() < v.state.getUtility()) {
                     v = vPrime;
                     realV = children.get(i);
                 }
+                //Moves beta up if necessary
                 if (v.state.getUtility() < beta)
                 {
                     beta = v.state.getUtility();
                 }
+                //Breaks if overlap
                 if (beta <= alpha)
                 {
                     break;
@@ -152,6 +166,7 @@ public class MinimaxAlphaBeta extends Agent {
     }
 }
 
+//Comparator for sorting GameStateChild
 class StateComparator implements Comparator<GameStateChild> {
 
     @Override
