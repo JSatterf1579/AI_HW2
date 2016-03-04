@@ -1,5 +1,6 @@
 package edu.cwru.sepia.agent.minimax;
 
+import com.sun.org.apache.xerces.internal.impl.xpath.XPath;
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.action.DirectedAction;
@@ -8,6 +9,7 @@ import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 import edu.cwru.sepia.util.Direction;
+import org.omg.PortableInterceptor.INACTIVE;
 
 import java.util.*;
 
@@ -236,10 +238,169 @@ public class GameState {
     }
 
     private void generateArcherChildren(List<GameStateChild> children) {
+        if(archers.size() == 1) {
+            StateUnit archer = archers.get(0);
+            for (Direction direction : Direction.values()) {
+                if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
+                    continue;
+                }
+                int x = archer.getXPosition() + direction.xComponent();
+                int y = archer.getYPosition() + direction.yComponent();
+                if(isInMap(x, y) && notOnResourceNode(x,y)) {
+                    GameStateChild child = new GameStateChild(oldState);
+                    updateChildState(child.state);
+                    Map<Integer, Action> actionSet = new HashMap<>();
+                    Action action = new DirectedAction(archer.ID, ActionType.PRIMITIVEMOVE, direction);
+                    actionSet.put(1, action);
+                    child.state.archers.get(0).position.x = x;
+                    child.state.archers.get(0).position.y = y;
+                    child.action = actionSet;
+                    children.add(child);
+                }
+            }
+            for (int i = 0; i < footmen.size(); i++) {
+                StateUnit footman = footmen.get(i);
+                if (isInRange(archer, footman)) {
+                    GameStateChild child = new GameStateChild(oldState);
+                    updateChildState(child.state);
+                    Map<Integer, Action> actionSet = new HashMap<>();
+                    Action action = new TargetedAction(archer.ID, ActionType.PRIMITIVEATTACK, footman.ID);
+                    actionSet.put(1, action);
+                    child.state.footmen.get(i).health -= 6; //hardcoded expected value lol
+                    child.state.archers.get(0).attacking = true;
+                    child.action = actionSet;
+                    children.add(child);
+                }
+            }
+        } else if (archers.size() ==2) {
+            StateUnit archer1 = archers.get(0);
+            StateUnit archer2 = archers.get(1);
+            for (Direction direction : Direction.values()) {
+                if (direction.equals(Direction.NORTHEAST) || direction.equals(Direction.SOUTHEAST) || direction.equals(Direction.SOUTHWEST) || direction.equals(Direction.SOUTHEAST)) {
+                    continue;
+                }
 
+
+
+                for (Direction direction1: Direction.values()) {
+                    if (direction1.equals(Direction.NORTHEAST) || direction1.equals(Direction.SOUTHEAST) || direction1.equals(Direction.SOUTHWEST) || direction1.equals(Direction.SOUTHEAST)) {
+                        continue;
+                    }
+                    int x1 = archer1.getXPosition() + direction.xComponent();
+                    int x2 = archer2.getXPosition() + direction1.yComponent();
+                    int y1 = archer1.getYPosition() + direction.yComponent();
+                    int y2 = archer2.getYPosition() + direction1.yComponent();
+
+                    if(isInMap(x1, y1) && isInMap(x2,y2) && notOnResourceNode(x1,y1) && notOnResourceNode(x2, y2) && notTheSameMove(x1, x2, y1, y2)) {
+                        GameStateChild child = new GameStateChild(oldState);
+                        updateChildState(child.state);
+                        Map<Integer, Action> actionSet = new HashMap<>();
+                        Action action  = new DirectedAction(archer1.ID, ActionType.PRIMITIVEMOVE, direction);
+                        Action action2 = new DirectedAction(archer2.ID, ActionType.PRIMITIVEMOVE, direction1);
+                        actionSet.put(1, action);
+                        actionSet.put(2, action2);
+                        child.state.archers.get(0).position.x = x1;
+                        child.state.archers.get(0).position.y = y1;
+                        child.state.archers.get(1).position.x = x2;
+                        child.state.archers.get(1).position.y = y2;
+                        child.action = actionSet;
+                        children.add(child);
+                    }
+                }
+            }
+
+            //Archer 1 attacking
+            for (int i = 0; i < footmen.size(); i++) {
+                StateUnit footman = footmen.get(i);
+                if(isInRange(archer1, footman)) {
+                    for (Direction direction1: Direction.values()) {
+                        if (direction1.equals(Direction.NORTHEAST) || direction1.equals(Direction.SOUTHEAST) || direction1.equals(Direction.SOUTHWEST) || direction1.equals(Direction.SOUTHEAST)) {
+                            continue;
+                        }
+                        int x2 = archer2.getXPosition() + direction1.yComponent();
+                        int y2 = archer2.getYPosition() + direction1.yComponent();
+
+                        if(isInMap(x2,y2) && notOnResourceNode(x2, y2)) {
+                            GameStateChild child = new GameStateChild(oldState);
+                            updateChildState(child.state);
+                            Map<Integer, Action> actionSet = new HashMap<>();
+                            Action action  = new TargetedAction(archer1.ID, ActionType.PRIMITIVEATTACK, footman.ID);
+                            Action action2 = new DirectedAction(archer2.ID, ActionType.PRIMITIVEMOVE, direction1);
+                            actionSet.put(1, action);
+                            actionSet.put(2, action2);
+                            child.state.archers.get(1).position.x = x2;
+                            child.state.archers.get(1).position.y = y2;
+                            child.state.footmen.get(i).health -= 6;
+                            child.state.archers.get(0).attacking = true;
+                            child.action = actionSet;
+                            children.add(child);
+                        }
+                    }
+                }
+            }
+
+            //Archer 2 attacking
+            for (int i = 0; i < footmen.size(); i++) {
+                StateUnit footman = footmen.get(i);
+                if(isInRange(archer2, footman)) {
+                    for (Direction direction1: Direction.values()) {
+                        if (direction1.equals(Direction.NORTHEAST) || direction1.equals(Direction.SOUTHEAST) || direction1.equals(Direction.SOUTHWEST) || direction1.equals(Direction.SOUTHEAST)) {
+                            continue;
+                        }
+                        int x2 = archer1.getXPosition() + direction1.yComponent();
+                        int y2 = archer1.getYPosition() + direction1.yComponent();
+
+                        if(isInMap(x2,y2) && notOnResourceNode(x2, y2)) {
+                            GameStateChild child = new GameStateChild(oldState);
+                            updateChildState(child.state);
+                            Map<Integer, Action> actionSet = new HashMap<>();
+                            Action action  = new TargetedAction(archer2.ID, ActionType.PRIMITIVEATTACK, footman.ID);
+                            Action action2 = new DirectedAction(archer1.ID, ActionType.PRIMITIVEMOVE, direction1);
+                            actionSet.put(1, action);
+                            actionSet.put(2, action2);
+                            child.state.archers.get(0).position.x = x2;
+                            child.state.archers.get(0).position.y = y2;
+                            child.state.footmen.get(i).health -= 6;
+                            child.state.archers.get(1).attacking = true;
+                            child.action = actionSet;
+                            children.add(child);
+                        }
+                    }
+                }
+            }
+
+            //Both archers attacking
+            for (int i = 0; i < footmen.size(); i++) {
+                StateUnit footman = footmen.get(i);
+                if(isInRange(archer1, footman)) {
+                    for (int j = 0; j < footmen.size(); j++) {
+                        StateUnit footman1 = footmen.get(i);
+                        if(isInRange(archer2, footman1)) {
+                            GameStateChild child = new GameStateChild(oldState);
+                            updateChildState(child.state);
+                            Map<Integer, Action> actionSet = new HashMap<>();
+                            Action action = new TargetedAction(archer1.ID, ActionType.PRIMITIVEATTACK, footman.ID);
+                            Action action1 = new TargetedAction(archer2.ID, ActionType.PRIMITIVEATTACK, footman1.ID);
+                            actionSet.put(1, action);
+                            actionSet.put(2, action1);
+                            child.state.archers.get(0).attacking = true;
+                            child.state.archers.get(1).attacking = true;
+                            child.state.footmen.get(i).health -= 6;
+                            child.state.footmen.get(j).health -= 6;
+                            child.action = actionSet;
+                            children.add(child);
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    private int getAStarPathLength(Position start, Position end, List<ResourceNode.ResourceView> resources, int xExtent, int yExtent) {
+    private boolean isInRange(StateUnit archer, StateUnit footman) {
+        return  Math.abs(archer.getXPosition() - footman.getXPosition()) + Math.abs(archer.getYPosition() - footman.getYPosition()) <= archer.range;
+    }
+
+    private int getAStarPathLength(Position start, Position end, int xExtent, int yExtent) {
 
         boolean done = false;
         MapLocation current = null;
